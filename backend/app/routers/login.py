@@ -13,11 +13,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/token")
 router = APIRouter()
 
 @router.post("/login/token", tags=["Login"])
-def create_token_after_authentication(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def create_token_after_authentication(
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)
+    ):
     user = db.query(User).filter(User.email==form_data.username).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username")
-    if not Hasher.verify_password(form_data.password, user.hashed_password):
+    if Hasher.verify_password(form_data.password, user.hashed_password) != "OK":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password")
     data = {"sub": form_data.username}
     jwt_token = jwt.encode(data, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
